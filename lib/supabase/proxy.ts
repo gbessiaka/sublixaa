@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "./env";
 
 // Chemins accessibles sans être connecté
-const PUBLIC_PATHS = ["/login", "/auth", "/confidentialite", "/conditions", "/suppression-donnees"];
+// /api/cron est protégé par CRON_SECRET (NF-05), pas par la session
+const PUBLIC_PATHS = ["/login", "/auth", "/confidentialite", "/conditions", "/suppression-donnees", "/api/cron"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

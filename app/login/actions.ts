@@ -1,10 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { isEmailAllowed } from "@/lib/auth/allowed";
 import { getDictionary } from "@/lib/i18n";
+import { getSiteUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState = { error?: string; message?: string; email?: string } | undefined;
@@ -16,15 +16,6 @@ const loginSchema = z.object({
 });
 
 const RATE_LIMIT_CODES = new Set(["over_email_send_rate_limit", "over_request_rate_limit"]);
-
-// URL publique du site, pour le lien magique (doit figurer dans les Redirect URLs de Supabase)
-async function getSiteUrl() {
-  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
-}
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const t = getDictionary().auth;
