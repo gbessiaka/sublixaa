@@ -8,8 +8,9 @@ import { buildAiContext } from "@/lib/ai/context";
 import { getOwnerContextOrNull } from "@/lib/auth/session";
 import { localToUtc } from "@/lib/dates";
 import { getDictionary, interpolate } from "@/lib/i18n";
-import { getRules, normalizeHashtag } from "@/lib/network-rules";
+import { normalizeHashtag } from "@/lib/network-rules";
 import { schedulingIssues } from "@/lib/post-validation";
+import { publishesAutomatically } from "@/lib/publishers";
 import { EDITABLE_STATUSES, MANUAL_TRANSITIONS } from "@/lib/posts";
 import { publishPost } from "@/lib/publishing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -104,7 +105,6 @@ export async function transitionPostAction(
   if (!post) return { error: t.common.notFound };
   if (!rule.from.includes(post.status as never)) return { error: t.post.errors.invalidTransition };
 
-  const rules = getRules(post.network);
   const update: { status: string; scheduled_at?: string; published_at?: string; error_message?: null } = { status: rule.to };
 
   if (rule.to === "scheduled") {
@@ -118,7 +118,7 @@ export async function transitionPostAction(
     update.error_message = null;
   }
   if (rule.to === "published_manually") {
-    if (rules?.autoPublish) return { error: t.post.errors.invalidTransition };
+    if (publishesAutomatically(post.network)) return { error: t.post.errors.invalidTransition };
     update.published_at = new Date().toISOString();
   }
 

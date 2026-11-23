@@ -118,11 +118,11 @@ Format JSON attendu :
 // F-15 : une publication à partir d'un sujet libre, une version par réseau
 export async function generatePost(
   ctx: AiContext,
-  input: { client: ClientProfile; topic: string; networks: string[] },
+  input: { client: ClientProfile; topic: string; networks: string[]; brief?: string | null },
 ): Promise<PostOutput> {
   const prompt = `Rédige une publication sur ce sujet :
 <sujet>${input.topic}</sujet>
-
+${input.brief ? `\n<consignes>\n${input.brief}\n</consignes>\n` : ""}
 Une version adaptée pour chacun de ces réseaux : ${input.networks.join(", ")}.
 
 Format JSON attendu :

@@ -57,7 +57,7 @@ async function OwnerGate({ children }: { children: React.ReactNode }) {
           </p>
           <div className="flex items-center gap-3">
             <Button asChild variant="highlight" className="h-10 px-5">
-              <Link href="/content">
+              <Link href="/content/new">
                 <Plus />
                 <span className="hidden sm:inline">{t.dashboard.newPost}</span>
               </Link>

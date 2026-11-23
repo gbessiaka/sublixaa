@@ -1,9 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getFreshAccount } from "@/lib/accounts";
-import { composeText, getRules, validatePost } from "@/lib/network-rules";
+import { composeText, validatePost } from "@/lib/network-rules";
 import type { PostStatus } from "@/lib/posts";
-import { getPublisher, type PublishResult } from "@/lib/publishers";
+import { getPublisher, publishesAutomatically, type PublishResult } from "@/lib/publishers";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
 type Admin = SupabaseClient<Database>;
@@ -49,7 +49,7 @@ export async function publishPost(
 
   try {
     const publisher = getPublisher(post.network);
-    if (!publisher || !getRules(post.network)?.autoPublish) return await fail("Ce réseau ne se publie pas automatiquement.");
+    if (!publisher || !publishesAutomatically(post.network)) return await fail("Ce réseau ne se publie pas automatiquement.");
     if (!post.social_account_id) return await fail("Aucun compte connecté pour cette publication. Connectez un compte puis réessayez.");
 
     const { data: accountRow } = await admin

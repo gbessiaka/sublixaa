@@ -1,4 +1,5 @@
 import "server-only";
+import { getRules } from "@/lib/network-rules";
 import { linkedinPagePublisher, linkedinPersonPublisher } from "./linkedin";
 import { facebookPublisher } from "./meta-facebook";
 import { instagramPublisher } from "./meta-instagram";
@@ -26,4 +27,11 @@ export function listPublishers(): Publisher[] {
 
 export function isPublisherConfigured(publisher: Publisher): boolean {
   return publisher.requiredEnv.every((name) => Boolean(process.env[name]));
+}
+
+// Publication automatique seulement si le réseau le permet ET que ses identifiants sont configurés.
+// Sinon, la publication se fait à la main (copier le texte, puis « Marquer publié manuellement »).
+export function publishesAutomatically(network: string): boolean {
+  const publisher = getPublisher(network);
+  return Boolean(getRules(network)?.autoPublish && publisher && isPublisherConfigured(publisher));
 }

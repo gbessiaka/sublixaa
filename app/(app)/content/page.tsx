@@ -1,13 +1,15 @@
+import { Plus } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { getOwnerContext } from "@/lib/auth/session";
 import { formatInTz } from "@/lib/dates";
 import { getDictionary } from "@/lib/i18n";
 import { NETWORK_IDS, isNetworkId } from "@/lib/network-rules";
 import { POST_STATUSES, isPostStatus } from "@/lib/posts";
-import { generatePostAction, scheduleManyAction } from "./actions";
-import { NewPostForm, PostTable } from "./content-client";
+import { scheduleManyAction } from "./actions";
+import { PostTable } from "./content-client";
+import { PageHeader } from "../page-header";
 
 export default async function ContentPage({ searchParams }: PageProps<"/content">) {
   const t = getDictionary();
@@ -42,19 +44,15 @@ export default async function ContentPage({ searchParams }: PageProps<"/content"
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{t.content.title}</h1>
-      {clients?.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.content.newTitle}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <NewPostForm t={t} action={generatePostAction} clients={clients} networks={NETWORK_IDS} />
-          </CardContent>
-        </Card>
-      ) : (
-        <p className="text-muted-foreground">{t.clients.empty}</p>
-      )}
+      <PageHeader title={t.content.title}>
+        <Button asChild className="h-10 px-5">
+          <Link href={client ? `/content/new?client=${client}` : "/content/new"}>
+            <Plus />
+            {t.content.new}
+          </Link>
+        </Button>
+      </PageHeader>
+      {!clients?.length && <p className="text-muted-foreground">{t.clients.empty}</p>}
 
       <form className="flex flex-wrap items-end gap-3" method="get">
         <label className="flex flex-col gap-1 text-sm">

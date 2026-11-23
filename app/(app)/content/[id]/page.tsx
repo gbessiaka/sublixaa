@@ -9,6 +9,7 @@ import { issueMessage } from "@/lib/format";
 import { getDictionary, interpolate } from "@/lib/i18n";
 import { composeText, getRules, validatePost } from "@/lib/network-rules";
 import { EDITABLE_STATUSES, MANUAL_TRANSITIONS, type PostStatus } from "@/lib/posts";
+import { publishesAutomatically } from "@/lib/publishers";
 import {
   deletePostAction,
   publishNowAction,
@@ -28,6 +29,7 @@ export default async function PostPage({ params }: PageProps<"/content/[id]">) {
 
   const { data: post } = await supabase.from("posts").select("*, clients(name)").eq("id", id).maybeSingle();
   if (!post) notFound();
+  const auto = publishesAutomatically(post.network);
   const [{ data: media }, { data: accounts }, { data: logs }] = await Promise.all([
     supabase.from("post_media").select("*").eq("post_id", id).order("position"),
     supabase.from("social_accounts").select("id, display_name").eq("client_id", post.client_id).eq("network", post.network),
@@ -136,7 +138,7 @@ export default async function PostPage({ params }: PageProps<"/content/[id]">) {
               {can("toReview") && (
                 <ActionButton action={transitionPostAction.bind(null, id, "toReview")} label={t.post.markToReview} pendingLabel={t.common.pending} />
               )}
-              {rules?.autoPublish && can("schedule") && (
+              {auto && can("schedule") && (
                 <ActionButton action={transitionPostAction.bind(null, id, "schedule")} label={t.post.schedule} pendingLabel={t.common.pending} variant="default" />
               )}
               {can("unschedule") && (
@@ -148,7 +150,7 @@ export default async function PostPage({ params }: PageProps<"/content/[id]">) {
                   <p className="text-xs text-muted-foreground">{t.post.retryHint}</p>
                 </>
               )}
-              {rules?.autoPublish && !locked && (
+              {auto && !locked && (
                 <ActionButton
                   action={publishNowAction.bind(null, id)}
                   label={t.post.publishNow}
@@ -156,7 +158,7 @@ export default async function PostPage({ params }: PageProps<"/content/[id]">) {
                   confirm={t.post.publishNowConfirm}
                 />
               )}
-              {!rules?.autoPublish && !locked && (
+              {!auto && !locked && (
                 <>
                   <CopyTextButton t={t} text={composeText(post.body, post.hashtags)} />
                   <ActionButton action={transitionPostAction.bind(null, id, "markManual")} label={t.post.markPublishedManually} pendingLabel={t.common.pending} />
