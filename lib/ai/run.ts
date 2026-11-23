@@ -61,7 +61,7 @@ export async function runStructured<S extends z.ZodType>(
       usage = { inputTokens: result.inputTokens, outputTokens: result.outputTokens };
     } catch (error) {
       await logGeneration(ctx, params, usage, false, error instanceof Error ? error.message : String(error));
-      throw new AiGenerationError(error instanceof Error ? error.message : "Erreur du fournisseur d'IA");
+      throw new AiGenerationError(error instanceof Error ? error.message : "Erreur du service de rédaction");
     }
 
     let errors: string[] = [];

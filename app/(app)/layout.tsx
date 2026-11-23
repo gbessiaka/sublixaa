@@ -1,57 +1,75 @@
+import { Bell, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
-import { requireOwner } from "@/lib/auth/session";
+import { getOwnerContext } from "@/lib/auth/session";
 import { getAppConfig } from "@/lib/config";
-import { getDictionary, interpolate } from "@/lib/i18n";
+import { formatInTz } from "@/lib/dates";
+import { getDictionary } from "@/lib/i18n";
 import { signOut } from "./actions";
-import { NavLinks } from "./nav-links";
+import { Sidebar } from "./sidebar";
 
 // Garde côté serveur : rien de l'espace connecté n'est rendu sans propriétaire autorisé.
 // Placée sous <Suspense> car elle lit la session au moment de la requête (Cache Components).
 async function OwnerGate({ children }: { children: React.ReactNode }) {
-  const user = await requireOwner();
-  const dict = getDictionary();
+  const { supabase, user, settings } = await getOwnerContext();
+  const t = getDictionary();
   const { appName } = getAppConfig();
 
+  // Nombre d'éléments à traiter, affiché dans le menu et le bandeau
+  const [{ count: toReview }, { count: failed }] = await Promise.all([
+    supabase.from("posts").select("id", { count: "exact", head: true }).eq("status", "to_review"),
+    supabase.from("posts").select("id", { count: "exact", head: true }).eq("status", "failed"),
+  ]);
+  const taskCount = (toReview ?? 0) + (failed ?? 0);
+
+  const email = user.email ?? "";
+  const today = formatInTz(new Date(), settings.timeZone, "EEEE d MMMM yyyy");
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="mx-auto flex min-h-14 w-full max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2">
-          <nav className="flex items-center gap-4 overflow-x-auto sm:gap-6">
-            <Link href="/dashboard" className="shrink-0 font-semibold">
-              {appName}
-            </Link>
-            <NavLinks
-              links={[
-                { href: "/dashboard", label: dict.nav.dashboard },
-                { href: "/clients", label: dict.nav.clients },
-                { href: "/content", label: dict.nav.content },
-                { href: "/calendar", label: dict.nav.calendar },
-                { href: "/settings", label: dict.nav.settings },
-              ]}
-            />
-          </nav>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {interpolate(dict.auth.signedInAs, { email: user.email ?? "" })}
-            </span>
-            <form action={signOut}>
-              <Button type="submit" variant="outline" size="sm">
-                {dict.auth.signOut}
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">{children}</main>
+    <div className="min-h-screen bg-background">
+      <Sidebar
+        appName={appName}
+        tagline={t.nav.tagline}
+        menuLabel={t.nav.menu}
+        main={[
+          { key: "dashboard", href: "/dashboard", label: t.nav.dashboard },
+          { key: "clients", href: "/clients", label: t.nav.clients },
+          { key: "strategy", href: "/strategy", label: t.nav.strategy },
+          { key: "calendar", href: "/calendar", label: t.nav.calendar },
+          { key: "content", href: "/content", label: t.nav.content },
+          { key: "tasks", href: "/tasks", label: t.nav.tasks, badge: taskCount },
+          { key: "reports", href: "/reports", label: t.nav.reports },
+        ]}
+        bottom={[{ key: "settings", href: "/settings", label: t.nav.settings }]}
+        user={{ name: email.split("@")[0] || email, email, role: t.nav.owner }}
+        signOutLabel={t.auth.signOut}
+        signOut={signOut}
+      />
+      <div className="flex min-h-screen flex-col lg:pl-64">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card/80 pr-4 pl-16 backdrop-blur lg:px-8">
+          <p className="flex items-center gap-2 text-sm text-muted-foreground first-letter:uppercase">
+            <CalendarDays className="size-4" />
+            <span className="first-letter:uppercase">{today}</span>
+          </p>
+          <Link
+            href="/tasks"
+            className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={t.nav.tasks}
+            title={t.nav.tasks}
+          >
+            <Bell className="size-5" />
+            {taskCount > 0 && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />}
+          </Link>
+        </header>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 lg:px-8">{children}</main>
+      </div>
     </div>
   );
 }
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <Suspense fallback={<div className="min-h-screen" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <OwnerGate>{children}</OwnerGate>
     </Suspense>
   );

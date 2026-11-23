@@ -37,8 +37,8 @@ export async function callProvider(params: {
       messages: turns,
       output_config: { effort: "low", format: zodOutputFormat(schema) },
     });
-    if (response.stop_reason === "refusal") throw new Error("Le modèle a refusé la demande.");
-    if (response.stop_reason === "max_tokens") throw new Error("Réponse tronquée (limite de jetons atteinte).");
+    if (response.stop_reason === "refusal") throw new Error("Le service de rédaction a refusé la demande.");
+    if (response.stop_reason === "max_tokens") throw new Error("Texte incomplet (longueur maximale atteinte).");
     const text = response.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)
@@ -61,7 +61,7 @@ export async function callProvider(params: {
       messages: [{ role: "system", content: system }, ...turns],
     });
     const choice = response.choices[0];
-    if (choice?.finish_reason === "length") throw new Error("Réponse tronquée (limite de jetons atteinte).");
+    if (choice?.finish_reason === "length") throw new Error("Texte incomplet (longueur maximale atteinte).");
     return {
       text: choice?.message.content ?? "",
       inputTokens: response.usage?.prompt_tokens ?? 0,
