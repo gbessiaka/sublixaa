@@ -332,18 +332,14 @@ export const fr = {
   },
   settings: {
     title: "Paramètres",
-    ai: "Moteur de rédaction",
-    provider: "Service",
-    model: "Version",
-    providers: { anthropic: "Anthropic (Claude)", openai: "OpenAI", google: "Google (Gemini)" },
-    keyMissing: "Clé d'API absente pour ce service : ajoutez-la dans les variables d'environnement.",
+    general: "Général",
     timezone: "Fuseau horaire",
     timezoneInvalid: "Fuseau horaire inconnu.",
-    priceLine: "{model} ({input} $ / {output} $ par million de jetons)",
     costTitle: "Coût de rédaction du mois en cours",
-    costLine: "{cost} $ US pour {count} appel(s), {tokens} jetons",
+    costLine: "{cost} $ US pour {count} rédaction(s)",
     saved: "Paramètres enregistrés.",
   },
+
   export: {
     from: "Du",
     to: "Au",
@@ -358,7 +354,7 @@ export const fr = {
     status: "Statut",
   },
   ai: {
-    notConfigured: "Aucune clé d'API pour le service de rédaction choisi. Ajoutez-la dans les variables d'environnement.",
+    notConfigured: "Le service de rédaction n'est pas disponible pour le moment. Réessayez plus tard.",
     failed: "La rédaction a échoué : {message}",
   },
   legal: {
