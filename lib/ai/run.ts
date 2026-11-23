@@ -60,8 +60,11 @@ export async function runStructured<S extends z.ZodType>(
       rawText = result.text;
       usage = { inputTokens: result.inputTokens, outputTokens: result.outputTokens };
     } catch (error) {
-      await logGeneration(ctx, params, usage, false, error instanceof Error ? error.message : String(error));
-      throw new AiGenerationError(error instanceof Error ? error.message : "Erreur du service de rédaction");
+      // Le détail (fournisseur, quota…) reste côté serveur : journal et ai_generations, jamais l'écran
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error("Service de rédaction indisponible :", detail);
+      await logGeneration(ctx, params, usage, false, detail);
+      throw new AiGenerationError("service momentanément indisponible, réessayez dans quelques minutes.");
     }
 
     let errors: string[] = [];
@@ -75,7 +78,7 @@ export async function runStructured<S extends z.ZodType>(
         errors = parsed.error.issues.map((i) => `${i.path.join(".") || "racine"} : ${i.message}`);
       }
     } catch {
-      errors = ["La réponse n'est pas un JSON valide."];
+      errors = ["La réponse n'est pas un JSON valide."]; // message renvoyé au service, pas affiché tel quel
     }
 
     await logGeneration(ctx, params, usage, errors.length === 0, errors.length ? errors.join(" | ").slice(0, 2000) : null);
@@ -93,7 +96,9 @@ export async function runStructured<S extends z.ZodType>(
     );
   }
 
-  throw new AiGenerationError(lastErrors.slice(0, 5).join(" "));
+  // Erreurs de forme (JSON, schéma) remplacées par un message neutre ; les contraintes métier restent lisibles
+  const readable = lastErrors.filter((e) => !/JSON|racine|^[\w.]+ : /.test(e));
+  throw new AiGenerationError(readable.length ? readable.slice(0, 5).join(" ") : "la proposition reçue était incomplète, réessayez.");
 }
 
 async function logGeneration(
