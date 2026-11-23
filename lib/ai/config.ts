@@ -9,7 +9,7 @@ export function isAiProvider(value: string | null | undefined): value is AiProvi
 
 // Modèles proposés dans les paramètres. Prix en dollars US par million de jetons
 // (entrée / sortie). À revérifier sur les pages de prix des fournisseurs.
-export const AI_MODELS: Record<AiProvider, { id: string; inputPerMTok: number; outputPerMTok: number }[]> = {
+export const AI_MODELS: Record<AiProvider, { id: string; inputPerMTok?: number; outputPerMTok?: number }[]> = {
   anthropic: [
     { id: "claude-haiku-5-5", inputPerMTok: 0.1, outputPerMTok: 0.5 },
     { id: "claude-sonnet-5-5", inputPerMTok: 2, outputPerMTok: 10 },
@@ -19,24 +19,26 @@ export const AI_MODELS: Record<AiProvider, { id: string; inputPerMTok: number; o
     { id: "gpt-5-mini", inputPerMTok: 0.25, outputPerMTok: 2 },
     { id: "gpt-5-nano", inputPerMTok: 0.05, outputPerMTok: 0.4 },
   ],
-  google: [
-    { id: "gemini-2.5-flash", inputPerMTok: 0.3, outputPerMTok: 2.5 },
-    { id: "gemini-2.5-flash-lite", inputPerMTok: 0.1, outputPerMTok: 0.4 },
-  ],
+  // Les modèles 2.5 ne sont plus ouverts aux nouveaux comptes (constaté le 23 nov. 2026).
+  // Prix non vérifiés : coût laissé vide plutôt qu'inventé (niveau gratuit d'AI Studio en test).
+  google: [{ id: "gemini-3.5-flash" }, { id: "gemini-3.5-flash-lite" }],
 };
 
 // Modèle léger par défaut pour chaque fournisseur (cahier, section 5)
 export const DEFAULT_MODEL: Record<AiProvider, string> = {
   anthropic: "claude-haiku-5-5",
   openai: "gpt-5-mini",
-  google: "gemini-2.5-flash",
+  google: "gemini-3.5-flash",
 };
 
 // Coût estimé d'un appel ; null si le modèle n'est pas dans la table
 export function estimateCost(model: string, inputTokens: number, outputTokens: number): number | null {
   for (const list of Object.values(AI_MODELS)) {
     const m = list.find((x) => x.id === model);
-    if (m) return (inputTokens * m.inputPerMTok + outputTokens * m.outputPerMTok) / 1_000_000;
+    if (m) {
+      if (m.inputPerMTok === undefined || m.outputPerMTok === undefined) return null;
+      return (inputTokens * m.inputPerMTok + outputTokens * m.outputPerMTok) / 1_000_000;
+    }
   }
   return null;
 }

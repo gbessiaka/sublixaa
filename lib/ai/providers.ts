@@ -69,7 +69,8 @@ export async function callProvider(params: {
     };
   }
 
-  const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  // Délai maximal : en cas de forte demande, Google peut garder la connexion ouverte sans répondre
+  const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { timeout: 120_000 } });
   const response = await client.models.generateContent({
     model,
     contents: turns.map((t) => ({ role: t.role === "assistant" ? "model" : "user", parts: [{ text: t.content }] })),
