@@ -1,6 +1,7 @@
-import { Bell, CalendarDays } from "lucide-react";
+import { Bell, CalendarDays, Plus } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { getOwnerContext } from "@/lib/auth/session";
 import { getAppConfig } from "@/lib/config";
 import { formatInTz } from "@/lib/dates";
@@ -16,9 +17,10 @@ async function OwnerGate({ children }: { children: React.ReactNode }) {
   const { appName } = getAppConfig();
 
   // Nombre d'éléments à traiter, affiché dans le menu et le bandeau
-  const [{ count: toReview }, { count: failed }] = await Promise.all([
+  const [{ count: toReview }, { count: failed }, { data: clients }] = await Promise.all([
     supabase.from("posts").select("id", { count: "exact", head: true }).eq("status", "to_review"),
     supabase.from("posts").select("id", { count: "exact", head: true }).eq("status", "failed"),
+    supabase.from("clients").select("id, name").is("archived_at", null).order("name"),
   ]);
   const taskCount = (toReview ?? 0) + (failed ?? 0);
 
@@ -31,6 +33,8 @@ async function OwnerGate({ children }: { children: React.ReactNode }) {
         appName={appName}
         tagline={t.nav.tagline}
         menuLabel={t.nav.menu}
+        clientsLabel={t.nav.clientsSection}
+        clients={clients ?? []}
         main={[
           { key: "dashboard", href: "/dashboard", label: t.nav.dashboard },
           { key: "clients", href: "/clients", label: t.nav.clients },
@@ -46,22 +50,30 @@ async function OwnerGate({ children }: { children: React.ReactNode }) {
         signOut={signOut}
       />
       <div className="flex min-h-screen flex-col lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card/80 pr-4 pl-16 backdrop-blur lg:px-8">
-          <p className="flex items-center gap-2 text-sm text-muted-foreground first-letter:uppercase">
+        <header className="flex h-20 items-center justify-between gap-3 pr-4 pl-16 lg:px-8">
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarDays className="size-4" />
             <span className="first-letter:uppercase">{today}</span>
           </p>
-          <Link
-            href="/tasks"
-            className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t.nav.tasks}
-            title={t.nav.tasks}
-          >
-            <Bell className="size-5" />
-            {taskCount > 0 && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Button asChild variant="highlight" className="h-10 px-5">
+              <Link href="/content">
+                <Plus />
+                <span className="hidden sm:inline">{t.dashboard.newPost}</span>
+              </Link>
+            </Button>
+            <Link
+              href="/tasks"
+              className="relative flex size-10 items-center justify-center rounded-full bg-card text-foreground shadow-xs hover:bg-muted"
+              aria-label={t.nav.tasks}
+              title={t.nav.tasks}
+            >
+              <Bell className="size-[18px]" />
+              {taskCount > 0 && <span className="absolute top-2 right-2.5 size-2 rounded-full bg-orange-500" />}
+            </Link>
+          </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 pb-10 lg:px-8">{children}</main>
       </div>
     </div>
   );
